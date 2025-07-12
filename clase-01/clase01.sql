@@ -1,1 +1,0 @@
-CREATE DATABASE If Not Exists alumnos;;
