@@ -43,31 +43,112 @@ VALUES
 Consultas Bloque 1
 
 1. Listar los nombres de los usuarios
-2. Calcular el saldo máximo de los usuarios de sexo “Mujer”
-3. Listar nombre y teléfono de los usuarios con teléfono NOKIA, BLACKBERRY o SONY
-4. Contar los usuarios sin saldo o inactivos
-5. Listar el login de los usuarios con nivel 1, 2 o 3
-6. Listar los números de teléfono con saldo menor o igual a 300
-7. Calcular la suma de los saldos de los usuarios de la compañia telefónica NEXTEL
-8. Contar el número de usuarios por compañía telefónica
-9. Contar el número de usuarios por nivel
-10. Listar el login de los usuarios con nivel 2
-11. Mostrar el email de los usuarios que usan gmail
-12. Listar nombre y teléfono de los usuarios con teléfono LG, SAMSUNG o MOTOROLA
+   SELECT nombre from usuarios;
 
+2. Calcular el saldo máximo de los usuarios de sexo “Mujer”
+SELECT MAX(saldo) as saldo_maximo from usuarios where sexo = 'M';
+
+3. Listar nombre y teléfono de los usuarios con teléfono NOKIA, BLACKBERRY o SONY
+SELECT nombre, telefono
+FROM usuarios
+WHERE marca IN ('NOKIA', 'BLACKBERRY', 'SONY');
+
+4. Contar los usuarios sin saldo o inactivos
+SELECT COUNT(*) AS usuarios_sin_saldo_o_inactivos
+FROM usuarios
+WHERE saldo = 0 OR activo = 0;
+
+5. Listar el login de los usuarios con nivel 1, 2 o 3
+SELECT usuario
+FROM usuarios
+WHERE nivel IN (1, 2, 3);
+
+6. Listar los números de teléfono con saldo menor o igual a 300
+SELECT telefono
+FROM usuarios
+WHERE saldo <= 300;
+
+7. Calcular la suma de los saldos de los usuarios de la compañia telefónica NEXTEL
+SELECT SUM(saldo) AS total_saldo_nextel
+FROM usuarios
+WHERE compania = 'NEXTEL';
+
+8. Contar el número de usuarios por compañía telefónica
+SELECT compania, COUNT(*) AS cantidad_usuarios
+FROM usuarios
+GROUP BY compania;
+
+9. Contar el número de usuarios por nivel
+SELECT nivel, COUNT(*) AS usuarios_por_nivel
+FROM usuarios
+GROUP BY nivel;
+
+10. Listar el login de los usuarios con nivel 2
+SELECT usuario
+FROM usuarios WHERE nivel = 2;
+
+11. Mostrar el email de los usuarios que usan gmail
+SELECT email
+FROM usuarios
+WHERE email LIKE '%@gmail%';
+
+12. Listar nombre y teléfono de los usuarios con teléfono LG, SAMSUNG o MOTOROLA
+SELECT nombre, telefono
+FROM usuarios
+WHERE marca IN ('LG', 'SAMSUNG', 'MOTOROLA');
 
 Consultas Bloque 2
 
 1. Listar nombre y teléfono de los usuarios con teléfono que no sea de la marca LG o SAMSUNG
+SELECT nombre, telefono
+FROM usuarios
+WHERE marca NOT IN ('LG', 'SAMSUNG');
+
 2. Listar el login y teléfono de los usuarios con compañia telefónica IUSACELL
+SELECT usuario, telefono
+FROM usuarios
+WHERE compania = 'IUSACELL';
+
 3. Listar el login y teléfono de los usuarios con compañia telefónica que no sea TELCEL
+SELECT usuario, telefono
+FROM usuarios
+WHERE compania NOT IN ('TELCEL');
+
 4. Calcular el saldo promedio de los usuarios que tienen teléfono marca NOKIA
+SELECT AVG(saldo) AS saldo_promedio_nokia
+FROM usuarios
+WHERE marca = 'NOKIA';
+
 5. Listar el login y teléfono de los usuarios con compañia telefónica IUSACELL o AXEL
+SELECT usuario, telefono
+FROM usuarios
+WHERE compania IN ('IUSACELL', 'AXEL');
+
 6. Mostrar el email de los usuarios que no usan yahoo
+SELECT email
+FROM usuarios
+WHERE email NOT LIKE '%@yahoo%';
+
 7. Listar el login y teléfono de los usuarios con compañia telefónica que no sea TELCEL o IUSACELL
+SELECT usuario, telefono
+FROM usuarios
+WHERE compañia NOT IN ('TELCEL', 'IUSACELL');
+
 8. Listar el login y teléfono de los usuarios con compañia telefónica UNEFON
+SELECT usuario, telefono
+FROM usuarios
+WHERE compañia = 'UNEFON';
+
 9. Listar las diferentes marcas de celular en orden alfabético descendentemente
+SELECT DISTINCT marca
+FROM usuarios
+ORDER BY marca DESC;
+
 10. Listar las diferentes compañias en orden alfabético aleatorio
+SELECT DISTINCT compañia
+FROM usuarios
+ORDER BY RAND();
+
 11. Listar el login de los usuarios con nivel 0 o 2
 12. Calcular el saldo promedio de los usuarios que tienen teléfono marca LG
 
