@@ -259,11 +259,29 @@ FROM usuarios
 WHERE compañia = 'IUSACELL' OR compañia = 'TELCEL';
 
 8. Listar las diferentes marcas de celular en orden alfabético ascendentemente
-SELECT 
+SELECT DISTINCT marca
+FROM usuarios
+ORDER BY marca ASC;
+
 9. Listar las diferentes marcas de celular en orden alfabético aleatorio
+SELECT DISTINCT marca
+FROM usuarios
+ORDER BY RAND();
+
 10. Listar el login y teléfono de los usuarios con compañia telefónica IUSACELL o UNEFON
+SELECT usuario, telefono
+FROM usuarios
+WHERE compañia IN ('IUSACELL', 'UNEFON');
+
 11. Listar nombre y teléfono de los usuarios con teléfono que no sea de la marca MOTOROLA o NOKIA
+SELECT nombre, telefono
+FROM usuarios
+WHERE marca NOT IN ('MOTOROLA', 'NOKIA');
 12. Calcular la suma de los saldos de los usuarios de la compañia telefónica TELCEL
+SELECT SUM(saldo) AS suma_saldos_telcel
+FROM usuarios
+WHERE compañia = 'TELCEL';
+
 
 CREATE DATABASE IF NOT EXISTS pruebas;
 USE pruebas;
@@ -471,3 +489,23 @@ WHERE saldo = 0 OR activo = 0;
 SELECT usuario, telefono
 FROM usuarios
 WHERE compañia = 'IUSACELL' OR compañia = 'TELCEL';
+
+SELECT DISTINCT marca
+FROM usuarios
+ORDER BY marca ASC;
+
+SELECT DISTINCT marca
+FROM usuarios
+ORDER BY RAND();
+
+SELECT usuario, telefono
+FROM usuarios
+WHERE compañia IN ('IUSACELL', 'UNEFON');
+
+SELECT nombre, telefono
+FROM usuarios
+WHERE marca NOT IN ('MOTOROLA', 'NOKIA');
+
+SELECT SUM(saldo) AS suma_saldos_telcel
+FROM usuarios
+WHERE compañia = 'TELCEL'; 
