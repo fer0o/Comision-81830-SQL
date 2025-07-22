@@ -93,24 +93,61 @@ WHERE nacionalidad = 'Argentina';
 
 📌 6️⃣ Uso de DELETE
 Eliminar un alumno cuyo id_alumno = 5.
+DELETE from alumnos WHERE id_alumno = 5;
+
 Eliminar todos los alumnos de Uruguay.
+DELETE from alumnos WHERE nacionalidad = 'Uruguay';
+
 Eliminar a los alumnos que no tengan email registrado.
+DELETE from alumnos WHERE email = IS NULL;
+
 Eliminar todos los alumnos cuyo telefono sea NULL.
+DELETE from alumnos WHERE telefono = IS NULL;
+
 Eliminar un alumno con dni menor a 30.000.000.
+DELETE from alumnos WHERE dni < 30000000;
 
 📌 7️⃣ Funciones de Agregación (COUNT, SUM, AVG, MIN, MAX)
 Contar cuántos alumnos hay en la tabla.
+SELECT COUNT(*) AS total_alumnos FROM alumnos;
+
 Contar cuántos alumnos tienen telefono registrado.
+SELECT COUNT(*) AS telefono_registrado
+FROM alumnos
+WHERE telefono IS NOT NULL;
+
 Obtener el dni más alto registrado en la tabla.
+SELECT MAX (dni) AS dni_mas_alto FROM alumnos;
+
 Obtener el dni más bajo registrado en la tabla.
+SELECT MIN (dni) AS dni_mas_bajo FROM alumnos;
+
 Obtener la cantidad de alumnos por cada nacionalidad.
+SELECT nacionalidad, COUNT(*) AS alumnos_por_nacionalidad
+FROM alumnos
+GROUP BY nacionalidad;
+
 
 📌 8️⃣ Uso de GROUP BY y HAVING
 Obtener el número de alumnos por nacionalidad.
+SELECT nacionalidad, COUNT(*) AS alumnos_por_nacionalidad
+FROM alumnos
+GROUP BY nacionalidad;
+
 Contar cuántos alumnos tienen el mismo apellido.
+SELECT apellido, COUNT(*) AS alumnos_mismo_apellido
+FROM alumnos
+GROUP BY apellido;
+
 Obtener la cantidad de alumnos con email registrado y agrupar por nacionalidad.
+SELECT nacionalidad, COUNT(*) AS alumnos_con_email
+FROM alumnos
+WHERE email IS NOT NULL
+GROUP BY nacionalidad;
+
 Seleccionar nacionalidades con más de 2 alumnos registrados.
 Obtener el promedio de dni de los alumnos por nacionalidad.
+
 📌 9️⃣ Uso de JOIN
 Seleccionar todos los pedidos y los nombres de los alumnos que los hicieron.
 SELECT alumnos.nombre, pedidos.producto 
@@ -120,6 +157,7 @@ Hacer un LEFT JOIN entre alumnos y pedidos.
 Hacer un RIGHT JOIN entre alumnos y pedidos.
 Seleccionar solo los alumnos que no han hecho pedidos (LEFT JOIN con NULL).
 Contar cuántos pedidos ha hecho cada alumno.
+
 📌 🔟 Uso de UNION y INTERSECT
 Unir los resultados de alumnos y profesores en una sola consulta.
 Obtener los email que aparecen tanto en alumnos como en profesores.
