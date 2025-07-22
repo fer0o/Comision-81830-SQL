@@ -4,51 +4,107 @@ Seleccionar todos los registros de la tabla alumnos.
 SELECT * FROM alumnos;
 
 Seleccionar solo los nombres y apellidos de la tabla alumnos.
+SELECT nombre, apellido FROM alumnos;
 
 Seleccionar los alumnos que sean de Argentina.
+SELECT * FROM alumnos WHERE nacionalidad = 'Argentina';
 
 Seleccionar los alumnos que tengan un email registrado (no NULL).
+SELECT * FROM alumnos WHERE email IS NOT NULL;
 
 Seleccionar los alumnos mayores de 18 años.
+SELECT * FROM alumnos WHERE edad >= 18;
 
 📌 2️⃣ Uso de WHERE y Operadores
 Seleccionar los alumnos cuyo nombre comience con "J".
+SELECT * FROM alumnos WHERE nombre LIKE 'J%';
+
 Seleccionar los alumnos cuyo dni sea mayor a 30.000.000.
+SELECT * FROM alumnos WHERE dni >= 30000000;
+
 Seleccionar los alumnos que no tengan telefono registrado.
+SELECT * FROM alumnos WHERE telefono IS  NULL;
+
 Seleccionar los alumnos que sean de Argentina o Uruguay.
+SELECT * FROM alumnos WHERE nacionalidad IN ('Argentina', 'Uruguay');
+
 Seleccionar los alumnos que no sean de Argentina ni de Uruguay.
+SELECT * FROM alumnos WHERE nacionalidad NOT IN ('Argentina','Uruguay');
+
 📌 3️⃣ Uso de ORDER BY y LIMIT
 Seleccionar los alumnos y ordenarlos por apellido en orden ascendente.
+SELECT * FROM alumnos ORDER BY apellido ASC;
+
 Seleccionar los alumnos y ordenarlos por dni en orden descendente.
+SELECT * FROM alumnos  ORDER BY dni DESC;
+
 Seleccionar los 5 primeros alumnos registrados en la tabla.
+SELECT * FROM alumnos ORDER BY id_alumno LIMIT 5;
+
 Seleccionar el alumno con el dni más alto.
+SELECT * FROM alumnos ORDER BY dni DESC LIMIT 1;
+
 Seleccionar los últimos 3 alumnos registrados.
+SELECT * FROM alumnos ORDER BY id_alumno DESC LIMIT 3;
+
 📌 4️⃣ Uso de INSERT
 Insertar un nuevo alumno en la tabla alumnos.
 INSERT INTO alumnos (nombre, apellido, email, dni, telefono, nacionalidad)
 VALUES ('Carlos', 'López', 'carlos.lopez@gmail.com', 37845612, '1122334455', 'Chile');
+
 Insertar dos alumnos nuevos en la misma consulta.
+INSERT INTO alumnos (nombre, apellido, email, dni, telefono, nacionalidad)
+VALUES 
+('Lucía', 'Méndez', 'lucia.mendez@mail.com', 51234567, '1133445566', 'México'),
+('Andrés', 'Ibarra', 'andres.ibarra@mail.com', 52345678, '1144556677', 'Perú');
+
 Insertar un alumno sin especificar telefono.
+INSERT INTO alumnos (nombre, apellido, email, dni, nacionalidad)
+VALUES ('Saul', 'Goodman', 'saulg@gmail.com', 378456132, 'México');
+
 Insertar un alumno sin especificar email.
+INSERT INTO alumnos (nombre, apellido, dni, nacionalidad)
+VALUES ('Roberto', 'Lewan', 37845622, 'Polonia');
+
 Insertar un alumno con nacionalidad diferente a Argentina.
+INSERT INTO alumnos (nombre, apellido, email, dni, telefono, nacionalidad)
+VALUES ('Elena', 'Kravchenko', 'elena.k@mail.com', 53112233, '1133998822', 'Ucrania');
+
+
+
 📌 5️⃣ Uso de UPDATE
 Cambiar el email de un alumno con id_alumno = 2.
+UPDATE alumnos SET email = 'emailcambiado@mail.com' WHERE id_alumno = 2;
+
 Modificar la nacionalidad de todos los alumnos de Chile a Perú.
+UPDATE alumnos SET nacionalidad = 'Perú' WHERE nacionalidad = 'Chile';
+
 Cambiar el telefono de un alumno específico.
+UPDATE alumnos SET telefono = '5544332288' WHERE id_alumno = 8;
+
 Modificar el apellido de un alumno cuyo nombre sea "María".
+UPDATE alumnos SET apellido = 'Chacon' WHERE nombre = 'Maria';
+
 Aumentar en 1 el dni de todos los alumnos que sean de Argentina.
+UPDATE alumnos
+SET dni = dni + 1
+WHERE nacionalidad = 'Argentina';
+
+
 📌 6️⃣ Uso de DELETE
 Eliminar un alumno cuyo id_alumno = 5.
 Eliminar todos los alumnos de Uruguay.
 Eliminar a los alumnos que no tengan email registrado.
 Eliminar todos los alumnos cuyo telefono sea NULL.
 Eliminar un alumno con dni menor a 30.000.000.
+
 📌 7️⃣ Funciones de Agregación (COUNT, SUM, AVG, MIN, MAX)
 Contar cuántos alumnos hay en la tabla.
 Contar cuántos alumnos tienen telefono registrado.
 Obtener el dni más alto registrado en la tabla.
 Obtener el dni más bajo registrado en la tabla.
 Obtener la cantidad de alumnos por cada nacionalidad.
+
 📌 8️⃣ Uso de GROUP BY y HAVING
 Obtener el número de alumnos por nacionalidad.
 Contar cuántos alumnos tienen el mismo apellido.
