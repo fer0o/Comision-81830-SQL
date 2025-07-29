@@ -146,7 +146,16 @@ WHERE email IS NOT NULL
 GROUP BY nacionalidad;
 
 Seleccionar nacionalidades con más de 2 alumnos registrados.
+SELECT nacionalidad, COUNT(*) AS cantidad_alumnos
+FROM alumnos
+GROUP BY nacionalidad
+HAVING COUNT(*) > 2;
+
 Obtener el promedio de dni de los alumnos por nacionalidad.
+SELECT nacionalidad, AVG(dni) AS promedio_dni
+FROM alumnos
+GROUP BY nacionalidad;
+
 
 📌 9️⃣ Uso de JOIN
 Seleccionar todos los pedidos y los nombres de los alumnos que los hicieron.
