@@ -274,3 +274,30 @@ SELECT nombre, apellido, email, 'Profesor' AS tipo FROM profesores;
 SELECT nombre, apellido, email, 'Alumno' AS tipo FROM alumnos
 UNION
 SELECT nombre, apellido, email, 'Profesor' AS tipo FROM profesores;
+
+
+SELECT alumnos.email
+FROM alumnos
+INNER JOIN profesores ON alumnos.email = profesores.email;
+
+SELECT email
+FROM alumnos
+WHERE email IN (
+  SELECT email FROM profesores
+);
+SELECT alumnos.dni
+FROM alumnos
+INNER JOIN profesores ON alumnos.dni = profesores.dni;
+
+SELECT * 
+FROM alumnos
+WHERE nacionalidad IN ('Argentina', 'Uruguay');
+
+
+SELECT nombre, apellido, nacionalidad, 'Alumno' AS tipo
+FROM alumnos
+WHERE nacionalidad IN ('Argentina', 'Uruguay')
+UNION
+SELECT nombre, apellido, NULL AS nacionalidad, 'Profesor' AS tipo
+FROM profesores
+WHERE email LIKE '%@mail.com';  -- o agregás nacionalidad si la tuviera
