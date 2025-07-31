@@ -176,12 +176,37 @@ RIGHT JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno;
 
 Seleccionar solo los alumnos que no han hecho pedidos (LEFT JOIN con NULL).
 Contar cuántos pedidos ha hecho cada alumno.
+SELECT alumnos.nombre, alumnos.apellido
+FROM alumnos
+LEFT JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno
+WHERE pedidos.id_alumno IS NULL;
 
 📌 🔟 Uso de UNION y INTERSECT
 Unir los resultados de alumnos y profesores en una sola consulta.
+SELECT nombre, apellido, email FROM alumnos
+UNION
+SELECT nombre, apellido, email FROM profesores;
+
 Obtener los email que aparecen tanto en alumnos como en profesores.
+SELECT alumnos.email
+FROM alumnos
+INNER JOIN profesores ON alumnos.email = profesores.email;
+
 Obtener los dni que aparecen en ambas tablas.
+SELECT alumnos.dni
+FROM alumnos
+INNER JOIN profesores ON alumnos.dni = profesores.dni;
+
 Unir los alumnos de Argentina y Uruguay en una misma consulta.
+SELECT nombre, apellido, nacionalidad, 'Alumno' AS tipo
+FROM alumnos
+WHERE nacionalidad IN ('Argentina', 'Uruguay')
+UNION
+SELECT nombre, apellido, NULL AS nacionalidad, 'Profesor' AS tipo
+FROM profesores
+WHERE email LIKE '%@mail.com';  -- o agregás nacionalidad si la tuviera
+
+
 Seleccionar solo los alumnos que han hecho pedidos y unirlo con una lista de profesores que también han hecho pedidos.
 
 

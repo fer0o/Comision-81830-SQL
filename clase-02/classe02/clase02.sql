@@ -241,3 +241,36 @@ FROM alumnos
 LEFT JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno
 WHERE pedidos.id_alumno IS NULL;
 
+
+
+SELECT alumnos.nombre, alumnos.apellido, COUNT(pedidos.id_pedido) AS cantidad_pedidos
+FROM alumnos
+LEFT JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno
+GROUP BY alumnos.id_alumno, alumnos.nombre, alumnos.apellido;
+
+CREATE TABLE profesores (
+  id_profesor INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(50) NOT NULL,
+  apellido VARCHAR(80) NOT NULL,
+  email VARCHAR(150) UNIQUE,
+  dni INT UNIQUE NOT NULL
+);
+INSERT INTO profesores (nombre, apellido, email, dni) VALUES
+('Lucía', 'Méndez', 'lucia.mendez@mail.com', 51234567),
+('Carlos', 'López', 'carlos.lopez@gmail.com', 37845612),
+('Diego', 'Reyes', 'diegoreyes@mail.com', 23565656),
+('Roberto', 'Lewan', 'roberto.lewan@mail.com', 30000000);
+
+select * from profesores;
+
+SELECT nombre, apellido, email FROM alumnos
+UNION
+SELECT nombre, apellido, email FROM profesores;
+
+SELECT nombre, apellido, email, 'Alumno' AS tipo FROM alumnos
+UNION
+SELECT nombre, apellido, email, 'Profesor' AS tipo FROM profesores;
+
+SELECT nombre, apellido, email, 'Alumno' AS tipo FROM alumnos
+UNION
+SELECT nombre, apellido, email, 'Profesor' AS tipo FROM profesores;
