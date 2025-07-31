@@ -162,8 +162,18 @@ Seleccionar todos los pedidos y los nombres de los alumnos que los hicieron.
 SELECT alumnos.nombre, pedidos.producto 
 FROM alumnos 
 INNER JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno;
+
 Hacer un LEFT JOIN entre alumnos y pedidos.
+SELECT alumnos.nombre, pedidos.producto
+FROM alumnos
+LEFT JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno;
+
 Hacer un RIGHT JOIN entre alumnos y pedidos.
+SELECT alumnos.nombre, pedidos.producto
+FROM alumnos
+RIGHT JOIN pedidos ON alumnos.id_alumno = pedidos.id_alumno;
+
+
 Seleccionar solo los alumnos que no han hecho pedidos (LEFT JOIN con NULL).
 Contar cuántos pedidos ha hecho cada alumno.
 
