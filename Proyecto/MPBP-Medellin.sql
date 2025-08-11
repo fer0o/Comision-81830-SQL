@@ -185,6 +185,20 @@ CREATE TABLE IF NOT EXISTS eventos_servicios (
     INDEX idx_ev_srv_evento (id_evento),
     INDEX idx_ev_srv_servicio (id_servicio)
 );
+-- consulta de un total de un evento
+SELECT es.id_evento, SUM(es.subtotal) AS total_evento
+FROM eventos_servicios es
+WHERE es.id_evento = 1
+GROUP BY es.id_evento;
+-- consulta del total de cada servicio contratado
+SELECT s.tipo_servicio, s.nombre_servicio, es.cantidad, es.precio_unitario, es.subtotal
+FROM eventos_servicios es
+JOIN servicios s ON s.id_servicio = es.id_servicio
+WHERE es.id_evento = 1
+ORDER BY s.tipo_servicio, s.nombre_servicio;
+
+select * from eventos_servicios;
+
 -- poblamos la tabla eventos_servicios
 -- id_evento, id_servicio, cantidad, precio_unitario
 
@@ -542,12 +556,154 @@ INSERT INTO contratos (id_proveedor, fecha_inicio, fecha_fin, monto, descripcion
 (9,  '2025-09-01', '2026-09-01',  6500.00, 'Servicios de fotografía y video profesional', FALSE),
 (10, '2025-10-01', '2026-04-01', 11000.00, 'Banquetes gourmet para eventos sociales', TRUE);
 
+-- creacion tabla Pagos
+CREATE TABLE IF NOT EXISTS pagos(
+id_pago INT PRIMARY KEY AUTO_INCREMENT,
+id_evento INT NOT NULL,
+fecha_pago DATETIME NOT NULL,
+monto DECIMAL (10,2) NOT NULL,
+metodo_pago ENUM ('efectivo', 'transferencia', 'tarjeta', 'cheque') NOT NULL,
+tipo_pago ENUM ('anticipo', 'parcial', 'liquidacion') NOT NULL,
+referencia VARCHAR (120),
+pagado BOOLEAN NOT NULL DEFAULT TRUE CHECK (pagado IN (0,1)),
+notas VARCHAR (300),
+
+CONSTRAINT fk_pagos_evento
+	FOREIGN KEY (id_evento)
+    REFERENCES eventos(id_evento)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+CHECK (monto > 0),
+
+INDEX idx_pagos_evento (id_evento),
+INDEX idx_pagos_fecha (fecha_pago),
+INDEX idx_pagos_tipo (tipo_pago)
+);
+
+-- consulta para saber el total real de cada evento basado en eventos_servicios
+SELECT 
+  e.id_evento,
+  e.nombre_evento,
+  SUM(es.subtotal) AS total_evento
+FROM eventos e
+JOIN eventos_servicios es ON es.id_evento = e.id_evento
+GROUP BY e.id_evento, e.nombre_evento
+ORDER BY e.id_evento;
+
+SELECT 
+  e.id_evento,
+  e.nombre_evento,
+  COALESCE(SUM(es.subtotal), 0) AS total_evento
+FROM eventos e
+LEFT JOIN eventos_servicios es 
+  ON es.id_evento = e.id_evento
+GROUP BY e.id_evento, e.nombre_evento
+ORDER BY e.id_evento;
+
+-- INSERTS para la tabla pagos con referencias claras
+
+-- Evento 1: Boda García-Pérez — total 56,500 — fecha 2025-02-14
+INSERT INTO pagos (id_evento, fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas) VALUES
+(1, '2025-01-10 12:00:00', 20000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #001', TRUE, 'Anticipo'),
+(1, '2025-02-05 16:30:00', 25000.00, 'tarjeta', 'parcial', 'Pago con tarjeta VISA ****4587', TRUE, 'Parcial'),
+(1, '2025-02-14 18:30:00', 11500.00, 'efectivo', 'liquidacion', 'Pago en efectivo en salón', TRUE, 'Liquidación final');
+
+-- Evento 2: Graduación Ingeniería 2025 — total 50,800 — fecha 2025-06-20
+INSERT INTO pagos VALUES
+(NULL, 2, '2025-04-30 10:00:00', 20000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #002', TRUE, 'Anticipo'),
+(NULL, 2, '2025-06-01 11:45:00', 20000.00, 'tarjeta', 'parcial', 'Pago con tarjeta Mastercard ****1290', TRUE, 'Parcial'),
+(NULL, 2, '2025-06-20 17:00:00', 10800.00, 'efectivo', 'liquidacion', 'Pago en efectivo en evento', TRUE, 'Liquidación final');
+
+-- Evento 3: Cumpleaños Sofía Navarro — total 23,000 — fecha 2025-03-05
+INSERT INTO pagos (id_evento, fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas) VALUES
+(3, '2025-02-20 10:00:00', 10000.00, 'transferencia', 'anticipo',   'Transferencia bancaria #003', TRUE, 'Anticipo'),
+(3, '2025-03-05 15:00:00', 13000.00, 'efectivo',      'liquidacion', 'Pago en efectivo en evento', TRUE, 'Liquidación final');
+
+-- Evento 4: Evento Corporativo MPBP — total 37,800 — fecha 2025-05-10
+INSERT INTO pagos VALUES
+(NULL, 4, '2025-04-20 10:30:00', 15000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #003', TRUE, 'Anticipo'),
+(NULL, 4, '2025-05-10 08:30:00', 22800.00, 'transferencia', 'liquidacion', 'Transferencia bancaria #004', TRUE, 'Liquidación final');
+
+-- Evento 5: Boda Luna-Romero — total 60,000 — fecha 2025-04-18
+INSERT INTO pagos VALUES
+(NULL, 5, '2025-03-15 13:00:00', 30000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #005', TRUE, 'Anticipo'),
+(NULL, 5, '2025-04-10 12:30:00', 15000.00, 'tarjeta', 'parcial', 'Pago con tarjeta VISA ****7643', TRUE, 'Parcial'),
+(NULL, 5, '2025-04-18 16:30:00', 15000.00, 'efectivo', 'liquidacion', 'Pago en efectivo en salón', TRUE, 'Liquidación final');
+
+-- Evento 6: Graduación Medicina 2025 — total 48,600 — fecha 2025-07-12
+INSERT INTO pagos VALUES
+(NULL, 6, '2025-06-20 09:20:00', 20000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #006', TRUE, 'Anticipo'),
+(NULL, 6, '2025-07-05 15:40:00', 20000.00, 'tarjeta', 'parcial', 'Pago con tarjeta Mastercard ****4312', TRUE, 'Parcial'),
+(NULL, 6, '2025-07-12 17:30:00', 8600.00, 'efectivo', 'liquidacion', 'Pago en efectivo en evento', TRUE, 'Liquidación final');
+
+-- Evento 7: Cumpleaños Jorge Torres — total 38,500 — fecha 2025-08-25
+INSERT INTO pagos VALUES
+(NULL, 7, '2025-08-05 10:00:00', 15000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #007', TRUE, 'Anticipo'),
+(NULL, 7, '2025-08-25 12:00:00', 23500.00, 'tarjeta', 'liquidacion', 'Pago con tarjeta VISA ****8765', TRUE, 'Liquidación final');
+
+-- Evento 8: Evento Corporativo Innovatech — total 10,300 — fecha 2025-09-15
+INSERT INTO pagos VALUES
+(NULL, 8, '2025-09-01 09:15:00', 5000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #008', TRUE, 'Anticipo'),
+(NULL, 8, '2025-09-15 09:00:00', 5300.00, 'efectivo', 'liquidacion', 'Pago en efectivo en evento', TRUE, 'Liquidación final');
+
+-- Evento 9: Boda Morales-Castro — total 62,000 — fecha 2025-10-03
+INSERT INTO pagos VALUES
+(NULL, 9, '2025-09-10 11:00:00', 30000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #009', TRUE, 'Anticipo'),
+(NULL, 9, '2025-09-25 16:00:00', 20000.00, 'tarjeta', 'parcial', 'Pago con tarjeta Mastercard ****5123', TRUE, 'Parcial'),
+(NULL, 9, '2025-10-03 17:30:00', 12000.00, 'efectivo', 'liquidacion', 'Pago en efectivo en salón', TRUE, 'Liquidación final');
+
+-- Evento 10: Graduación Derecho 2025 — total 43,200 — fecha 2025-11-28
+INSERT INTO pagos VALUES
+(NULL, 10, '2025-11-10 12:00:00', 20000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #010', TRUE, 'Anticipo'),
+(NULL, 10, '2025-11-28 17:00:00', 23200.00, 'tarjeta', 'liquidacion', 'Pago con tarjeta VISA ****9512', TRUE, 'Liquidación final');
+
+-- Evento 11: Cumpleaños Diego Martínez — total 18,500 — fecha 2025-12-02
+INSERT INTO pagos VALUES
+(NULL, 11, '2025-11-15 10:20:00', 10000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #011', TRUE, 'Anticipo'),
+(NULL, 11, '2025-12-02 12:45:00', 8500.00, 'efectivo', 'liquidacion', 'Pago en efectivo en evento', TRUE, 'Liquidación final');
+
+-- Evento 12: Evento Corporativo TecnoGlobal — total 53,500 — fecha 2025-12-15
+INSERT INTO pagos VALUES
+(NULL, 12, '2025-11-30 15:30:00', 20000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #012', TRUE, 'Anticipo'),
+(NULL, 12, '2025-12-10 11:15:00', 20000.00, 'tarjeta', 'parcial', 'Pago con tarjeta Mastercard ****3109', TRUE, 'Parcial'),
+(NULL, 12, '2025-12-15 08:30:00', 13500.00, 'efectivo', 'liquidacion', 'Pago en efectivo en salón', TRUE, 'Liquidación final');
+
+-- Evento 13: Boda Ríos-Domínguez — total 58,000 — fecha 2026-01-24
+INSERT INTO pagos VALUES
+(NULL, 13, '2025-12-20 09:00:00', 30000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #013', TRUE, 'Anticipo'),
+(NULL, 13, '2026-01-10 10:00:00', 20000.00, 'tarjeta', 'parcial', 'Pago con tarjeta VISA ****7841', TRUE, 'Parcial'),
+(NULL, 13, '2026-01-24 16:00:00', 8000.00, 'efectivo', 'liquidacion', 'Pago en efectivo en evento', TRUE, 'Liquidación final');
+
+-- Evento 14: Graduación Contaduría 2026 — total 39,800 — fecha 2026-02-20
+INSERT INTO pagos VALUES
+(NULL, 14, '2026-01-25 14:00:00', 15000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #014', TRUE, 'Anticipo'),
+(NULL, 14, '2026-02-15 12:00:00', 15000.00, 'tarjeta', 'parcial', 'Pago con tarjeta Mastercard ****6320', TRUE, 'Parcial'),
+(NULL, 14, '2026-02-20 16:00:00', 9800.00, 'efectivo', 'liquidacion', 'Pago en efectivo en salón', TRUE, 'Liquidación final');
+
+-- Evento 15: Cumpleaños Héctor Domínguez — total 20,000 — fecha 2026-03-10
+INSERT INTO pagos VALUES
+(NULL, 15, '2026-02-25 09:30:00', 10000.00, 'transferencia', 'anticipo', 'Transferencia bancaria #015', TRUE, 'Anticipo'),
+(NULL, 15, '2026-03-10 14:00:00', 10000.00, 'tarjeta', 'liquidacion', 'Pago con tarjeta VISA ****4875', TRUE, 'Liquidación final');
 
 
+-- consulta para saber el id_evento, nombre evento, total del evento, total pagado y saldo pendiente
+SELECT 
+  e.id_evento,
+  e.nombre_evento,
+  IFNULL(es.total_evento, 0) AS total_evento,
+  IFNULL(p.total_pagado, 0)  AS total_pagado,
+  IFNULL(es.total_evento,0) - IFNULL(p.total_pagado,0) AS saldo_pendiente
+FROM eventos e
+LEFT JOIN (
+  SELECT id_evento, SUM(subtotal) AS total_evento
+  FROM eventos_servicios
+  GROUP BY id_evento
+) es ON es.id_evento = e.id_evento
+LEFT JOIN (
+  SELECT id_evento, SUM(monto) AS total_pagado
+  FROM pagos
+  WHERE pagado = TRUE
+  GROUP BY id_evento
+) p ON p.id_evento = e.id_evento
+ORDER BY e.id_evento;
 
-select * from proveedores;
-select * from contratos;
-
-SELECT id_proveedor, nombre_proveedor
-FROM proveedores
-ORDER BY id_proveedor;
