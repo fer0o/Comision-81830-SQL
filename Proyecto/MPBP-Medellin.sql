@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS eventos (
     fecha_evento DATETIME NOT NULL,
     tipo_evento ENUM('boda','graduacion','cumpleanios','corporativo','otro') NOT NULL,
     lugar VARCHAR(150),
+    cantidad_personas INT,
     id_cliente INT NOT NULL,
 
     CONSTRAINT fk_eventos_clientes
@@ -136,22 +137,22 @@ CREATE TABLE IF NOT EXISTS eventos (
     INDEX idx_eventos_cliente (id_cliente)
 );
 -- poblamos la tabla eventos
-INSERT INTO eventos (nombre_evento, fecha_evento, tipo_evento, lugar, id_cliente) VALUES
-('Boda García-Pérez', '2025-02-14 19:00:00', 'boda', 'Salón Real del Lago', 1),
-('Graduación Ingeniería 2025', '2025-06-20 18:00:00', 'graduacion', 'Centro de Convenciones Guadalajara', 2),
-('Cumpleaños Sofía Navarro', '2025-03-05 15:00:00', 'cumpleanios', 'Quinta Los Olivos', 3),
-('Evento Corporativo MPBP', '2025-05-10 09:00:00', 'corporativo', 'Hotel Fiesta Americana', 4),
-('Boda Luna-Romero', '2025-04-18 17:00:00', 'boda', 'Hacienda Santa María', 5),
-('Graduación Medicina 2025', '2025-07-12 18:30:00', 'graduacion', 'Centro Cultural Universitario', 6),
-('Cumpleaños Jorge Torres', '2025-08-25 14:00:00', 'cumpleanios', 'Jardín Las Flores', 7),
-('Evento Corporativo Innovatech', '2025-09-15 10:00:00', 'corporativo', 'Expo Guadalajara', 8),
-('Boda Morales-Castro', '2025-10-03 18:00:00', 'boda', 'Salón La Casona', 9),
-('Graduación Derecho 2025', '2025-11-28 19:00:00', 'graduacion', 'Teatro Diana', 10),
-('Cumpleaños Diego Martínez', '2025-12-02 13:00:00', 'cumpleanios', 'Casa de Campo San Pedro', 11),
-('Evento Corporativo TecnoGlobal', '2025-12-15 09:30:00', 'corporativo', 'Centro Empresarial JVC', 12),
-('Boda Ríos-Domínguez', '2026-01-24 17:30:00', 'boda', 'Hacienda Los Arcos', 13),
-('Graduación Contaduría 2026', '2026-02-20 18:00:00', 'graduacion', 'Centro de Convenciones Expo Plaza', 14),
-('Cumpleaños Héctor Domínguez', '2026-03-10 15:30:00', 'cumpleanios', 'Salón Jardín Primavera', 15);
+INSERT INTO eventos (nombre_evento, fecha_evento, tipo_evento, lugar, cantidad_personas, id_cliente) VALUES
+('Boda García-Pérez', '2025-02-14 19:00:00', 'boda', 'Salón Real del Lago', 120, 1),
+('Graduación Ingeniería 2025', '2025-06-20 18:00:00', 'graduacion', 'Centro de Convenciones Guadalajara', 80, 2),
+('Cumpleaños Sofía Navarro', '2025-03-05 15:00:00', 'cumpleanios', 'Quinta Los Olivos', 30, 3),
+('Evento Corporativo MPBP', '2025-05-10 09:00:00', 'corporativo', 'Hotel Fiesta Americana', 100, 4),
+('Boda Luna-Romero', '2025-04-18 17:00:00', 'boda', 'Hacienda Santa María', 90, 5),
+('Graduación Medicina 2025', '2025-07-12 18:30:00', 'graduacion', 'Centro Cultural Universitario', 85, 6),
+('Cumpleaños Jorge Torres', '2025-08-25 14:00:00', 'cumpleanios', 'Jardín Las Flores', 25, 7),
+('Evento Corporativo Innovatech', '2025-09-15 10:00:00', 'corporativo', 'Expo Guadalajara', 150, 8),
+('Boda Morales-Castro', '2025-10-03 18:00:00', 'boda', 'Salón La Casona', 110, 9),
+('Graduación Derecho 2025', '2025-11-28 19:00:00', 'graduacion', 'Teatro Diana', 95, 10),
+('Cumpleaños Diego Martínez', '2025-12-02 13:00:00', 'cumpleanios', 'Casa de Campo San Pedro', 20, 11),
+('Evento Corporativo TecnoGlobal', '2025-12-15 09:30:00', 'corporativo', 'Centro Empresarial JVC', 200, 12),
+('Boda Ríos-Domínguez', '2026-01-24 17:30:00', 'boda', 'Hacienda Los Arcos', 130, 13),
+('Graduación Contaduría 2026', '2026-02-20 18:00:00', 'graduacion', 'Centro de Convenciones Expo Plaza', 75, 14),
+('Cumpleaños Héctor Domínguez', '2026-03-10 15:30:00', 'cumpleanios', 'Salón Jardín Primavera', 35, 15);
 
 -- consulta eventos
 select * from eventos;
@@ -185,19 +186,7 @@ CREATE TABLE IF NOT EXISTS eventos_servicios (
     INDEX idx_ev_srv_evento (id_evento),
     INDEX idx_ev_srv_servicio (id_servicio)
 );
--- consulta de un total de un evento
-SELECT es.id_evento, SUM(es.subtotal) AS total_evento
-FROM eventos_servicios es
-WHERE es.id_evento = 1
-GROUP BY es.id_evento;
--- consulta del total de cada servicio contratado
-SELECT s.tipo_servicio, s.nombre_servicio, es.cantidad, es.precio_unitario, es.subtotal
-FROM eventos_servicios es
-JOIN servicios s ON s.id_servicio = es.id_servicio
-WHERE es.id_evento = 1
-ORDER BY s.tipo_servicio, s.nombre_servicio;
 
-select * from eventos_servicios;
 
 -- poblamos la tabla eventos_servicios
 -- id_evento, id_servicio, cantidad, precio_unitario
@@ -340,7 +329,17 @@ INSERT INTO eventos_servicios (id_evento, id_servicio, cantidad, precio_unitario
 -- consulta de eventos _servicios
 select * from eventos_servicios;
 
-
+-- consulta de un total de un evento
+SELECT es.id_evento, SUM(es.subtotal) AS total_evento
+FROM eventos_servicios es
+WHERE es.id_evento = 1
+GROUP BY es.id_evento;
+-- consulta del total de cada servicio contratado
+SELECT s.tipo_servicio, s.nombre_servicio, es.cantidad, es.precio_unitario, es.subtotal
+FROM eventos_servicios es
+JOIN servicios s ON s.id_servicio = es.id_servicio
+WHERE es.id_evento = 1
+ORDER BY s.tipo_servicio, s.nombre_servicio;
 
 
 -- creacion tabla eventos_empleados (N:M eventos y empleados)
