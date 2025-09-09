@@ -275,4 +275,119 @@ DELIMITER ;
 
 -- consulta para la funcion de porcentaje pagado del evento
 SELECT fn_porcentaje_pagado_evento(3);
+
+-- SP #1 registrar pagos 
+DELIMITER $$
+
+CREATE PROCEDURE sp_registrar_pago(
+  IN  p_evento INT,
+  IN  p_fecha DATETIME,
+  IN  p_monto DECIMAL(10,2),
+  IN  p_metodo ENUM('efectivo','transferencia','tarjeta','cheque'),
+  IN  p_tipo   ENUM('anticipo','parcial','liquidacion'),
+  IN  p_referencia VARCHAR(120),
+  IN  p_notas VARCHAR(300),
+  OUT p_id_pago INT,
+  OUT p_saldo_nuevo DECIMAL(12,2)
+)
+MODIFIES SQL DATA
+BEGIN
+  DECLARE v_saldo         DECIMAL(12,2);
+  DECLARE v_fecha_evento  DATETIME;
+  DECLARE v_ref_count     INT;
+
+  -- 1) Validaciones básicas
+  IF p_monto <= 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El monto debe ser > 0';
+  END IF;
+
+  -- 2) Verificar que el evento exista y traer su fecha
+  SELECT fecha_evento INTO v_fecha_evento
+  FROM eventos
+  WHERE id_evento = p_evento
+  LIMIT 1;
+
+  IF v_fecha_evento IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El evento no existe';
+  END IF;
+
+  -- 3) Reglas temporales por tipo de pago
+  IF p_tipo = 'anticipo' AND p_fecha >= v_fecha_evento THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El anticipo debe ser antes del evento';
+  END IF;
+
+  IF p_tipo = 'liquidacion' AND p_fecha < v_fecha_evento THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La liquidación no puede ser antes del evento';
+  END IF;
+
+  -- 4) Referencia (si viene), validar duplicados
+  IF p_referencia IS NOT NULL AND p_referencia <> '' THEN
+    SELECT COUNT(*) INTO v_ref_count
+    FROM pagos
+    WHERE referencia = p_referencia;
+
+    IF v_ref_count > 0 THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La referencia ya existe';
+    END IF;
+  END IF;
+
+  -- 5) Validar que no haya sobrepago usando tu función
+  SET v_saldo = fn_total_por_pagar_evento(p_evento);
+  IF p_monto > v_saldo THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El monto excede el saldo pendiente';
+  END IF;
+
+  -- 6) Transacción para asegurar consistencia
+  START TRANSACTION;
+    INSERT INTO pagos (
+      id_evento, fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas
+    ) VALUES (
+      p_evento, p_fecha, p_monto, p_metodo, p_tipo, p_referencia, TRUE, p_notas
+    );
+
+    SET p_id_pago = LAST_INSERT_ID();
+    SET p_saldo_nuevo = fn_total_por_pagar_evento(p_evento);
+  COMMIT;
+END$$
+
+DELIMITER ;
     
+SET @id_pago := NULL; SET @saldo := NULL;
+
+-- Evento 16: anticipo 20,000
+CALL sp_registrar_pago(16, '2026-03-20 12:00:00', 20000.00, 'transferencia', 'anticipo', 'REF-16-A1', 'Anticipo', @id_pago, @saldo);
+SELECT @id_pago AS id_pago_16_a1, @saldo AS saldo_16;
+
+-- Evento 17: anticipo 25,000
+CALL sp_registrar_pago(17, '2026-05-15 10:00:00', 25000.00, 'tarjeta', 'anticipo', 'REF-17-A1', 'Anticipo', @id_pago, @saldo);
+SELECT @id_pago AS id_pago_17_a1, @saldo AS saldo_17;
+
+-- Evento 18: anticipo 10,000
+CALL sp_registrar_pago(18, '2026-04-15 09:00:00', 10000.00, 'efectivo', 'anticipo', 'REF-18-A1', 'Anticipo', @id_pago, @saldo);
+SELECT @id_pago AS id_pago_18_a1, @saldo AS saldo_18;
+
+-- Evento 19: anticipo 15,000
+CALL sp_registrar_pago(19, '2026-06-25 11:00:00', 15000.00, 'transferencia', 'anticipo', 'REF-19-A1', 'Anticipo', @id_pago, @saldo);
+SELECT @id_pago AS id_pago_19_a1, @saldo AS saldo_19;
+
+-- consulta para saber el saldo pendiente los eventos 16,17,18,19 ultimos agregados
+SELECT 
+  e.id_evento,
+  e.nombre_evento,
+  COALESCE(te.total_evento, 0)  AS total_evento,
+  COALESCE(tp.total_pagado, 0)  AS total_pagado,
+  COALESCE(te.total_evento, 0) - COALESCE(tp.total_pagado, 0) AS saldo_pendiente
+FROM eventos e
+LEFT JOIN (
+  SELECT id_evento, SUM(subtotal) AS total_evento
+  FROM eventos_servicios
+  GROUP BY id_evento
+) te ON te.id_evento = e.id_evento
+LEFT JOIN (
+  SELECT id_evento, SUM(monto) AS total_pagado
+  FROM pagos
+  WHERE pagado = TRUE
+  GROUP BY id_evento
+) tp ON tp.id_evento = e.id_evento
+WHERE e.id_evento IN (16,17,18,19)
+ORDER BY e.id_evento;

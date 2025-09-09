@@ -154,6 +154,12 @@ INSERT INTO eventos (nombre_evento, fecha_evento, tipo_evento, lugar, cantidad_p
 ('Graduación Contaduría 2026', '2026-02-20 18:00:00', 'graduacion', 'Centro de Convenciones Expo Plaza', 75, 14),
 ('Cumpleaños Héctor Domínguez', '2026-03-10 15:30:00', 'cumpleanios', 'Salón Jardín Primavera', 35, 15);
 
+
+INSERT INTO eventos (nombre_evento, fecha_evento, tipo_evento, lugar, cantidad_personas, id_cliente) VALUES
+('Boda Fernández-López', '2026-04-20 18:00:00', 'boda', 'Hacienda Los Pinos', 100, 2),
+('Graduación Arquitectura 2026', '2026-06-15 17:30:00', 'graduacion', 'Auditorio Principal UDG', 120, 4),
+('Cumpleaños Valeria Cruz', '2026-05-10 15:00:00', 'cumpleanios', 'Salón Arcoiris', 40, 6),
+('Evento Corporativo SoftTech', '2026-07-25 09:00:00', 'corporativo', 'Hotel Hilton Guadalajara', 180, 8);
 -- consulta eventos
 select * from eventos;
 
@@ -326,8 +332,33 @@ INSERT INTO eventos_servicios (id_evento, id_servicio, cantidad, precio_unitario
 (15, 10, 1, 5000.00),
 (15, 20, 1, 6000.00);
 
+-- Boda Fernández-López (Evento 16)
+INSERT INTO eventos_servicios (id_evento, id_servicio, cantidad, precio_unitario) VALUES
+(16, 1, 1, 45000.00),   -- Banquete Premium
+(16, 11, 8, 300.00),    -- 8 Meseros
+(16, 6, 1, 8500.00);    -- DJ Gold
+
+-- Graduación Arquitectura 2026 (Evento 17)
+INSERT INTO eventos_servicios (id_evento, id_servicio, cantidad, precio_unitario) VALUES
+(17, 4, 1, 38000.00),   -- Buffet Libre
+(17, 7, 1, 12000.00),   -- Banda de Jazz
+(17, 13, 2, 400.00);    -- 2 Bartenders
+
+-- Cumpleaños Valeria Cruz (Evento 18)
+INSERT INTO eventos_servicios (id_evento, id_servicio, cantidad, precio_unitario) VALUES
+(18, 3, 1, 8000.00),    -- Menú Infantil
+(18, 5, 1, 9000.00),    -- Mesa de Postres
+(18, 20, 1, 6000.00);   -- Photobooth
+
+-- Evento Corporativo SoftTech (Evento 19)
+INSERT INTO eventos_servicios (id_evento, id_servicio, cantidad, precio_unitario) VALUES
+(19, 2, 1, 30000.00),   -- Banquete Tradicional
+(19, 14, 1, 800.00),    -- Coordinador de Evento
+(19, 18, 1, 7000.00);   -- Iluminación LED de Escenario
+
 -- consulta de eventos _servicios
 select * from eventos_servicios;
+
 
 -- consulta de un total de un evento
 SELECT es.id_evento, SUM(es.subtotal) AS total_evento
