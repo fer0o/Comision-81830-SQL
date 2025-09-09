@@ -391,3 +391,100 @@ LEFT JOIN (
 ) tp ON tp.id_evento = e.id_evento
 WHERE e.id_evento IN (16,17,18,19)
 ORDER BY e.id_evento;
+
+-- SP #2 resumen del evento obtenemos el expediente completo del evento y se puede saber con los diferentes parametros y el id del evento
+DROP PROCEDURE IF EXISTS sp_resumen_evento_sel;
+DELIMITER $$
+CREATE PROCEDURE sp_resumen_evento_sel(
+  IN p_evento INT,
+  IN p_seccion ENUM('todo','cabecera','servicios','pagos','totales')
+)
+READS SQL DATA
+BEGIN
+  IF p_seccion IN ('todo','cabecera') THEN
+    SELECT e.id_evento, e.nombre_evento, e.fecha_evento, e.tipo_evento,
+           e.lugar, e.cantidad_personas,
+           c.id_cliente, CONCAT(c.nombre,' ',c.apellido) AS cliente
+    FROM eventos e
+    JOIN clientes c ON c.id_cliente = e.id_cliente
+    WHERE e.id_evento = p_evento;
+  END IF;
+
+  IF p_seccion IN ('todo','servicios') THEN
+    SELECT s.tipo_servicio, s.nombre_servicio,
+           es.cantidad, es.precio_unitario, es.subtotal
+    FROM eventos_servicios es
+    JOIN servicios s ON s.id_servicio = es.id_servicio
+    WHERE es.id_evento = p_evento
+    ORDER BY s.tipo_servicio, s.nombre_servicio;
+  END IF;
+
+  IF p_seccion IN ('todo','pagos') THEN
+    SELECT fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas
+    FROM pagos
+    WHERE id_evento = p_evento
+    ORDER BY fecha_pago;
+  END IF;
+
+  IF p_seccion IN ('todo','totales') THEN
+    SELECT
+      COALESCE(te.total_evento, 0) AS total_evento,
+      COALESCE(tp.total_pagado, 0) AS total_pagado,
+      COALESCE(te.total_evento, 0) - COALESCE(tp.total_pagado, 0) AS saldo_pendiente,
+      fn_porcentaje_pagado_evento(p_evento) AS porcentaje_pagado
+    FROM
+      (SELECT SUM(subtotal) AS total_evento
+       FROM eventos_servicios
+       WHERE id_evento = p_evento) te
+    LEFT JOIN
+      (SELECT SUM(monto) AS total_pagado
+       FROM pagos
+       WHERE id_evento = p_evento AND pagado = TRUE) tp
+    ON 1=1;
+  END IF;
+END$$
+DELIMITER ;
+-- calls 
+CALL sp_resumen_evento_sel(16, 'todo');
+CALL sp_resumen_evento_sel(16, 'cabecera');
+CALL sp_resumen_evento_sel(16, 'servicios');
+CALL sp_resumen_evento_sel(16, 'pagos');
+CALL sp_resumen_evento_sel(16, 'totales');
+
+
+-- SP #3 
+DELIMITER $$
+CREATE PROCEDURE sp_reporte_finanzas_simple()
+READS SQL DATA
+BEGIN
+  SELECT
+    e.id_evento,
+    e.nombre_evento,
+    e.fecha_evento,
+    e.tipo_evento,
+    CONCAT(c.nombre,' ',c.apellido) AS cliente,
+    COALESCE(te.total_evento,0) AS total_evento,
+    COALESCE(tp.total_pagado,0) AS total_pagado,
+    COALESCE(te.total_evento,0) - COALESCE(tp.total_pagado,0) AS saldo_pendiente,
+    CASE
+      WHEN COALESCE(tp.total_pagado,0) >= COALESCE(te.total_evento,0) THEN 'Pagado'
+      ELSE 'Pendiente'
+    END AS estado_pago
+  FROM eventos e
+  JOIN clientes c ON c.id_cliente = e.id_cliente
+  LEFT JOIN (
+    SELECT id_evento, SUM(subtotal) AS total_evento
+    FROM eventos_servicios
+    GROUP BY id_evento
+  ) te ON te.id_evento = e.id_evento
+  LEFT JOIN (
+    SELECT id_evento, SUM(monto) AS total_pagado
+    FROM pagos
+    WHERE pagado = TRUE
+    GROUP BY id_evento
+  ) tp ON tp.id_evento = e.id_evento
+  ORDER BY e.fecha_evento, e.id_evento;
+END$$
+DELIMITER ;
+
+CALL sp_reporte_finanzas_simple();
