@@ -296,12 +296,12 @@ BEGIN
   DECLARE v_fecha_evento  DATETIME;
   DECLARE v_ref_count     INT;
 
-  -- 1) Validaciones básicas
+  -- Validaciones 
   IF p_monto <= 0 THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El monto debe ser > 0';
   END IF;
 
-  -- 2) Verificar que el evento exista y traer su fecha
+  -- verificar que el evento exista
   SELECT fecha_evento INTO v_fecha_evento
   FROM eventos
   WHERE id_evento = p_evento
@@ -311,7 +311,7 @@ BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El evento no existe';
   END IF;
 
-  -- 3) Reglas temporales por tipo de pago
+  -- Reglas tipo de pago
   IF p_tipo = 'anticipo' AND p_fecha >= v_fecha_evento THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El anticipo debe ser antes del evento';
   END IF;
@@ -320,7 +320,7 @@ BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La liquidación no puede ser antes del evento';
   END IF;
 
-  -- 4) Referencia (si viene), validar duplicados
+  -- validar duplicados
   IF p_referencia IS NOT NULL AND p_referencia <> '' THEN
     SELECT COUNT(*) INTO v_ref_count
     FROM pagos
@@ -331,13 +331,13 @@ BEGIN
     END IF;
   END IF;
 
-  -- 5) Validar que no haya sobrepago usando tu función
+  -- usando la funcion ver duplicados
   SET v_saldo = fn_total_por_pagar_evento(p_evento);
   IF p_monto > v_saldo THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El monto excede el saldo pendiente';
   END IF;
 
-  -- 6) Transacción para asegurar consistencia
+  -- Transacción 
   START TRANSACTION;
     INSERT INTO pagos (
       id_evento, fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas
@@ -488,3 +488,108 @@ END$$
 DELIMITER ;
 
 CALL sp_reporte_finanzas_simple();
+
+-- trigger #1 validar que el monto es > 0, valida que el evento exista 
+
+DELIMITER $$
+CREATE TRIGGER bi_pagos_validaciones
+BEFORE INSERT ON pagos
+FOR EACH ROW
+BEGIN
+  DECLARE v_fecha_evento DATETIME;
+  DECLARE v_total_evento DECIMAL(12,2);
+  DECLARE v_total_pagado DECIMAL(12,2);
+
+  -- Validar monto
+  IF NEW.monto <= 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El monto debe ser > 0';
+  END IF;
+
+  -- Verificar evento y fecha
+  SELECT fecha_evento INTO v_fecha_evento
+  FROM eventos
+  WHERE id_evento = NEW.id_evento
+  LIMIT 1;
+
+  IF v_fecha_evento IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El evento no existe';
+  END IF;
+
+  -- Reglas según tipo de pago
+  IF NEW.tipo_pago = 'anticipo' AND NEW.fecha_pago >= v_fecha_evento THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El anticipo debe ser antes del evento';
+  END IF;
+
+  IF NEW.tipo_pago = 'liquidacion' AND NEW.fecha_pago < v_fecha_evento THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La liquidación no puede ser antes del evento';
+  END IF;
+
+  -- Validar sobrepago
+  SELECT COALESCE(SUM(subtotal),0) INTO v_total_evento
+  FROM eventos_servicios
+  WHERE id_evento = NEW.id_evento;
+
+  SELECT COALESCE(SUM(monto),0) INTO v_total_pagado
+  FROM pagos
+  WHERE id_evento = NEW.id_evento AND pagado = TRUE;
+
+  IF (v_total_pagado + NEW.monto) > v_total_evento THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El monto excede el saldo pendiente';
+  END IF;
+END$$
+DELIMITER ;
+
+-- prueba exitosa 
+INSERT INTO pagos (id_evento, fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas)
+VALUES (16, '2026-04-15 12:00:00', 10000.00, 'transferencia', 'parcial', 'TEST-VALIDO-01', TRUE, 'Prueba pago válido');
+
+-- prueba fallida excede el monto que se debe
+INSERT INTO pagos (id_evento, fecha_pago, monto, metodo_pago, tipo_pago, referencia, pagado, notas)
+VALUES (16, '2026-04-15 12:00:00', 50000.00, 'transferencia', 'parcial', 'TEST-INVALIDO-01', TRUE, 'Prueba sobrepago');
+
+-- trigger #2 valida que la cantidad sea >=1, el precio_unitario sea > 0 
+DELIMITER $$
+CREATE TRIGGER bi_eventos_servicios_validaciones
+BEFORE INSERT ON eventos_servicios
+FOR EACH ROW
+BEGIN
+  DECLARE v_activo TINYINT;
+  DECLARE v_duplicado INT;
+
+  -- cantidad válida
+  IF NEW.cantidad IS NULL OR NEW.cantidad < 1 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La cantidad debe ser >= 1';
+  END IF;
+
+  -- precio_unitario válido
+  IF NEW.precio_unitario IS NULL OR NEW.precio_unitario <= 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El precio_unitario debe ser > 0';
+  END IF;
+
+  -- servicio activo
+  SELECT activo
+    INTO v_activo
+  FROM servicios
+  WHERE id_servicio = NEW.id_servicio
+  LIMIT 1;
+
+  IF v_activo IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El servicio no existe';
+  END IF;
+
+  IF v_activo = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El servicio está inactivo';
+  END IF;
+
+  -- evitar duplicado 
+  SELECT COUNT(*)
+    INTO v_duplicado
+  FROM eventos_servicios
+  WHERE id_evento = NEW.id_evento
+    AND id_servicio = NEW.id_servicio;
+
+  IF v_duplicado > 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Este servicio ya está agregado para este evento';
+  END IF;
+END$$
+DELIMITER ;
